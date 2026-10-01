@@ -1,0 +1,41 @@
+name: CI
+
+on:
+    push:
+        branches: [main]
+    pull_request:
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    check:
+        name: check (${{ matrix.os }}, node ${{ matrix.node }})
+        runs-on: ${{ matrix.os }}
+        strategy:
+            fail-fast: false
+            matrix:
+                # windows is not decoration: core.autocrlf plus .gitattributes
+                # only misbehave there, and formatting drift is the symptom.
+                os: [ubuntu-latest, windows-latest]
+                node: [22, 24]
+        steps:
+            - uses: actions/checkout@v4
+
+            # Reads the pinned version from packageManager in package.json.
+            - uses: pnpm/action-setup@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: ${{ matrix.node }}
+                  cache: pnpm
+
+            - run: pnpm install --frozen-lockfile
+            - run: pnpm fmt:check
+            - run: pnpm lint
+            - run: pnpm typecheck
+            - run: pnpm test
+            # The suite aliases express-zod to live source, so the bundle is
+            # never exercised above. Build it here or a broken dist ships.
+            - run: pnpm build

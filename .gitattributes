@@ -1,0 +1,13 @@
+# Normalize to LF in the repository. Without this, `core.autocrlf=true` on Windows
+# checks files out as CRLF while oxfmt and .editorconfig both enforce LF, so every
+# checkout produces spurious reformatting diffs.
+* text=auto eol=lf
+
+# Windows-only scripts keep CRLF so cmd.exe can read them.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary assets are left untouched.
+*.png binary
+*.jpg binary
+*.ico binary

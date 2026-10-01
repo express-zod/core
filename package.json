@@ -1,0 +1,67 @@
+{
+    "name": "express-zod",
+    "version": "0.0.1",
+    "description": "Type-safe, schema-validated routing for Express and Zod.",
+    "keywords": [
+        "express",
+        "zod"
+    ],
+    "homepage": "https://github.com/express-zod/core#readme",
+    "bugs": {
+        "url": "https://github.com/express-zod/core/issues"
+    },
+    "license": "MIT",
+    "author": "Megumi Chai",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/express-zod/core.git"
+    },
+    "files": [
+        "dist"
+    ],
+    "type": "module",
+    "sideEffects": false,
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js"
+        }
+    },
+    "scripts": {
+        "build": "tsdown",
+        "typecheck": "tsc --noEmit",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "lint": "oxlint",
+        "lint:fix": "oxlint --fix",
+        "fmt": "oxfmt",
+        "fmt:check": "oxfmt --check",
+        "playground:start": "pnpm --filter playground start",
+        "prepare": "husky"
+    },
+    "devDependencies": {
+        "@types/node": "^26.6.3",
+        "husky": "^9.1.7",
+        "lint-staged": "^17.6.0",
+        "oxfmt": "^0.71.0",
+        "oxlint": "^1.86.0",
+        "tsdown": "^0.23.0",
+        "typescript": "^5.9.3",
+        "vitest": "^5.0.3"
+    },
+    "lint-staged": {
+        "*.{js,mjs,cjs,ts,mts,cts}": [
+            "oxlint --fix",
+            "oxfmt --write"
+        ],
+        "*.{json,jsonc,md,yml,yaml}": [
+            "oxfmt --write"
+        ]
+    },
+    "engines": {
+        "node": ">=22"
+    },
+    "packageManager": "pnpm@10.34.4"
+}

@@ -1,0 +1,14 @@
+{
+    "name": "playground",
+    "version": "0.0.0",
+    "private": true,
+    "description": "Demos that exercise express-zod against live source.",
+    "type": "module",
+    "scripts": {
+        "start": "tsx src/index.ts",
+        "dev": "tsx watch src/index.ts"
+    },
+    "devDependencies": {
+        "tsx": "^4.20.6"
+    }
+}

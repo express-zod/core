@@ -1,0 +1,7 @@
+packages:
+    - playground
+
+# esbuild ships a prebuilt platform binary from a postinstall script. pnpm blocks
+# build scripts by default, so it has to be allow-listed or vitest cannot run.
+onlyBuiltDependencies:
+    - esbuild
