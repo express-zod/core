@@ -28,17 +28,18 @@ source and never need a build first.
 
 ## Scripts
 
-| Command                 | Does                              |
-| ----------------------- | --------------------------------- |
-| `pnpm test`             | Run the suite once.               |
-| `pnpm test:watch`       | Run the suite in watch mode.      |
-| `pnpm build`            | Bundle `dist/` via tsdown.        |
-| `pnpm typecheck`        | Type-check without emitting.      |
-| `pnpm lint`             | Lint with oxlint.                 |
-| `pnpm lint:fix`         | Lint and apply safe fixes.        |
-| `pnpm fmt`              | Format with oxfmt.                |
-| `pnpm fmt:check`        | Check formatting without writing. |
-| `pnpm playground:start` | Run the playground demo.          |
+| Command                 | Does                                              |
+| ----------------------- | ------------------------------------------------- |
+| `pnpm test`             | Run the suite once.                               |
+| `pnpm test:watch`       | Run the suite in watch mode.                      |
+| `pnpm build`            | Bundle `dist/` via tsdown.                        |
+| `pnpm check:package`    | Validate the built package with publint and attw. |
+| `pnpm typecheck`        | Type-check without emitting.                      |
+| `pnpm lint`             | Lint with oxlint.                                 |
+| `pnpm lint:fix`         | Lint and apply safe fixes.                        |
+| `pnpm fmt`              | Format with oxfmt.                                |
+| `pnpm fmt:check`        | Check formatting without writing.                 |
+| `pnpm playground:start` | Run the playground demo.                          |
 
 Run a single test file or test case:
 

@@ -19,19 +19,23 @@ pnpm vitest run __test__/index.test.ts # single test file
 pnpm vitest run -t "name"              # single test by name
 pnpm typecheck                         # tsc --noEmit
 pnpm build                             # bundle dist/ via tsdown
+pnpm check:package                     # publint + attw against the built dist/
 pnpm lint                              # oxlint
 pnpm fmt                               # oxfmt (writes)
 pnpm playground:start                  # run the playground workspace
 ```
 
-Verify a change with `pnpm fmt:check && pnpm lint && pnpm typecheck && pnpm test`.
+Verify a change with `pnpm fmt:check && pnpm lint && pnpm typecheck && pnpm test`,
+and add `pnpm build && pnpm check:package` when you have touched anything that
+affects the published shape of the package.
 
 ## Architecture
 
 Three layers, and the way they connect is the main thing to understand:
 
 - **`src/`** — the library. It is the published package; `files` in `package.json`
-  limits the tarball to `dist/`, and `exports` points only at `./dist/index.js`.
+  limits the tarball to `dist/`, and `exports` maps the root specifier onto the
+  ESM/CJS pair in `dist/`.
 - **`__test__/`** — the vitest suite, importing the library **by package name**.
 - **`playground/`** — a pnpm workspace (`pnpm-workspace.yaml`) holding runnable
   demos. Unpublished, depends on nothing but `tsx`.
@@ -50,21 +54,28 @@ is not exercised by the test suite, so run it before publishing. The alias and t
 package name means updating both plus `package.json`.
 
 **Building** is `tsdown` (Rolldown-based), configured in `tsdown.config.ts`. It
-bundles `src/index.ts` to `dist/index.js` plus `dist/index.d.ts`. `tsconfig.json`
-is now only used for `pnpm typecheck` and by tsdown for type resolution — there is
-no `tsc`-based build config.
+bundles `src/index.ts` into four files: `dist/index.mjs` plus `dist/index.d.mts`
+for ESM, and `dist/index.cjs` plus `dist/index.d.cts` for CommonJS. The package
+ships both because the Express ecosystem still has a large CommonJS population.
+`tsconfig.json` is now only used for `pnpm typecheck` and by tsdown for type
+resolution — there is no `tsc`-based build config.
 
 Two tsdown settings are load-bearing and easy to lose:
 
-- `fixedExtension: false` — tsdown otherwise defaults to fixed extensions on
-  `platform: "node"` and emits `.mjs`/`.d.mts`, which would not match the
-  `exports` map in `package.json`.
+- `fixedExtension: true` — this is what stops the two formats colliding. With it
+  off, tsdown emits both as `index.js` and one format is silently lost. The exact
+  `.mjs`/`.cjs` and `.d.mts`/`.d.cts` names are hard-coded in the `exports` map in
+  `package.json`, so the two must change together.
 - `dts: true` — declaration output. It is also inferred from the `types` field in
   `package.json`, so it is stated explicitly in the config rather than left implicit.
 
 If you add entry points, update the `exports` field in `package.json` by hand to
 match; tsdown's `exports: true` option can generate it automatically but rewrites
 `package.json` on every build.
+
+`pnpm check:package` runs `publint` and `attw` against the built tarball, and CI
+runs it after the build. The test suite cannot cover this: it resolves
+`express-zod` to live source, so the emitted bundle is never exercised by a test.
 
 ## Conventions
 

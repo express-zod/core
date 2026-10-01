@@ -3,16 +3,19 @@ import { defineConfig } from "tsdown";
 export default defineConfig({
     entry: ["src/index.ts"],
     outDir: "dist",
-    format: ["esm"],
+    // Dual output. The Express ecosystem still has a large CommonJS
+    // population, and `require("express-zod")` has to work for them.
+    format: ["esm", "cjs"],
     platform: "node",
     target: "es2023",
-    // `fixedExtension` defaults to true for platform "node", which forces
-    // .mjs/.d.mts. The package is already `"type": "module"`, so those are
-    // redundant — this keeps output as index.js/index.d.ts and matching the
-    // `exports` map in package.json.
-    fixedExtension: false,
-    // Emits dist/index.d.ts alongside the bundle; also inferred from the
-    // `types` field in package.json, but stated here so it is not accidental.
+    // `true` is what keeps the two formats distinguishable: ESM lands as
+    // index.mjs/index.d.mts, CJS as index.cjs/index.d.cts. Setting this to
+    // false emits both as index.js and they collide. The `exports` map in
+    // package.json is written against these exact extensions — change one
+    // and you must change both.
+    fixedExtension: true,
+    // Emits the .d.mts/.d.cts pair alongside the bundles; also inferred from
+    // the `types` field in package.json, but stated here so it is deliberate.
     dts: true,
     sourcemap: true,
     clean: true,

@@ -39,3 +39,6 @@ jobs:
             # The suite aliases express-zod to live source, so the bundle is
             # never exercised above. Build it here or a broken dist ships.
             - run: pnpm build
+            # The suite above cannot see the exports map or the emitted d.ts,
+            # because it resolves express-zod to live source. These two do.
+            - run: pnpm check:package
