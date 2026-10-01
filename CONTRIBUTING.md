@@ -62,9 +62,46 @@ Do not hand-format code to satisfy a diff; run `pnpm fmt` and let the tools deci
 
 ## Commit messages
 
-Write commit subjects in the imperative mood ("Add route validator", not "Added").
-Keep the subject under 72 characters and use the body to explain why a change was
-made when the reason is not obvious from the diff.
+Commits follow the convention used by the Vue core repository — [Conventional
+Commits][spec] with a scope:
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+Only the header is required; the scope, body and footer are all optional.
+
+**Type** — one of `feat`, `fix`, `docs`, `style`, `refactor`, `perf`, `test`,
+`build`, `ci`, `chore`, `revert`. `chore` is the fallback for work that touches
+neither `src/` nor `__test__/`.
+
+**Scope** — optional, naming the affected area. Vue's scope list is its monorepo
+package names, which means nothing for a single package; use something like
+`deps`, `ci`, `exports`, `types`, `readme`, `playground` or `release`, and omit
+the parentheses entirely when nothing fits.
+
+**Subject** — imperative present tense ("add", not "added" or "adds"), lowercase
+first letter, no trailing period.
+
+**Body** — optional. Explain _why_ the change was made; the diff already shows
+_what_. Wrap at 72 columns and separate it from the header with a blank line.
+
+**Footer** — optional. `BREAKING CHANGE: <description>` for breaking changes, and
+issue references such as `Closes #12`.
+
+```
+feat(router): support async route validators
+fix(exports): resolve the cjs entry under node10
+docs: describe the dual build output
+```
+
+`/commit` applies the same convention.
+
+[spec]: https://www.conventionalcommits.org/en/v1.0.0/
 
 ## Pull requests
 
