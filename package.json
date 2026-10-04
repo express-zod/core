@@ -48,6 +48,9 @@
         "playground:start": "pnpm --filter playground start",
         "prepare": "husky"
     },
+    "dependencies": {
+        "type-fest": "^5.10.0"
+    },
     "devDependencies": {
         "@arethetypeswrong/cli": "^0.18.5",
         "@types/express": "^5.0.6",
