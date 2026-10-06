@@ -54,8 +54,14 @@ entirely when nothing fits.
 
 ### Body
 
-Optional. Explain **why** the change was made; the diff already shows _what_.
-Wrap at 72 columns. Separate it from the header with one blank line.
+Optional. Prefer a short list — one bullet per change — over a paragraph of
+prose. Explain **why** the change was made; the diff already shows _what_. Wrap
+at 72 columns. Separate it from the header with one blank line.
+
+```
+- add the Router class and the Middleware helper
+- turn typescript/no-explicit-any off in .oxlintrc.json
+```
 
 ### Footer
 
