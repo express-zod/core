@@ -1,5 +1,3 @@
-import { describe, expect, it } from "vitest";
-
 import * as core from "express-zod";
 
 describe("express-zod", () => {

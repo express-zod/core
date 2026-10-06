@@ -5,17 +5,21 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project status
 
 `express-zod` is a TypeScript library for type-safe, schema-validated routing for
-Express and Zod. It is scaffolded but **unimplemented**: `src/index.ts` is a
-placeholder that exports nothing. Do not describe its API as working until that
-changes.
+Express and Zod. The routing API is implemented: `src/index.ts` exports the
+`Router` class from `src/router.ts`, backed by the `Middleware` helper in
+`src/middleware.ts` and the inference layer under `src/types/`.
+
+It is pre-release, and the runtime surface is deliberately narrow — only `Router`
+is exported; `Middleware`, `toValidation` and `splitArgs` are internal. The
+playground is still a stub.
 
 ## Commands
 
 Run from the repository root.
 
 ```sh
-pnpm test                              # vitest run
-pnpm vitest run __test__/index.test.ts # single test file
+pnpm test                              # vitest run (runtime + type tests)
+pnpm vitest run __test__/router.test.ts # single test file
 pnpm vitest run -t "name"              # single test by name
 pnpm typecheck                         # tsc --noEmit
 pnpm build                             # bundle dist/ via tsdown
@@ -37,6 +41,10 @@ Three layers, and the way they connect is the main thing to understand:
   limits the tarball to `dist/`, and `exports` maps the root specifier onto the
   ESM/CJS pair in `dist/`.
 - **`__test__/`** — the vitest suite, importing the library **by package name**.
+  Runtime tests (`*.test.ts`) drive the router over HTTP with `supertest`; type
+  tests (`*.test-d.ts`) assert the exported type layer with `expectTypeOf`, and are
+  run by vitest's typecheck, which shells out to `tsc`. Vitest globals are on, so
+  tests do not import `describe`/`it`/`expect`.
 - **`playground/`** — a pnpm workspace (`pnpm-workspace.yaml`) holding runnable
   demos. Unpublished, depends on nothing but `tsx`.
 
@@ -87,6 +95,9 @@ A husky pre-commit hook runs `lint-staged`, which applies `oxlint --fix` then
 `oxfmt --write` to staged files. If the hook rewrites staged files, they must be
 re-added before the commit lands.
 
+Commit messages follow `.claude/commands/commit.md`: Vue-style Conventional
+Commits, with the body written as a short bullet list rather than a paragraph.
+
 ## Environment gotchas
 
 - **The package name is `express-zod`, but the directory is `express-zod-core`.**
@@ -96,7 +107,9 @@ re-added before the commit lands.
 - **pnpm blocks postinstall scripts by default.** `pnpm-workspace.yaml`
   allow-lists `esbuild` under `onlyBuiltDependencies`; without it vitest cannot
   run. Any new dependency with a build script needs adding there.
-- `unicorn/require-module-specifiers` is disabled on the `export {}` in
-  `src/index.ts`. It is an intentional placeholder — delete the disable comment
-  once real exports exist.
+- `no-shadow` is disabled locally in `src/router.ts` and `src/middleware.ts`, where
+  the inner `Router`/`Middleware` classes share a name with the type they get cast
+  to. Intentional — drop the disables only together with that cast.
+- `typescript/no-explicit-any` is off in `.oxlintrc.json`: the router internals
+  bridge Express's overloads with `any`.
 - `.husky/_/` is generated per-machine and gitignored.

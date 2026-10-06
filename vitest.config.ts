@@ -5,13 +5,16 @@ import { defineConfig } from "vitest/config";
 export default defineConfig({
     resolve: {
         alias: {
-            // Keeps the package name pointing at live source so tests exercise the
-            // entry point without a build step. Mirrors `paths` in tsconfig.json.
             "express-zod": fileURLToPath(new URL("./src/index.ts", import.meta.url)),
         },
     },
     test: {
+        globals: true,
         environment: "node",
         include: ["__test__/**/*.test.ts"],
+        typecheck: {
+            enabled: true,
+            include: ["__test__/**/*.test-d.ts"],
+        },
     },
 });
