@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ES2023"],
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "types": ["node", "vitest/globals"],
+
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "noFallthroughCasesInSwitch": true,
+
+    "verbatimModuleSyntax": true,
+    "isolatedModules": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true,
+
+    "declaration": true,
+    "noEmit": true,
+
+    "paths": {
+      "express-zod": ["./src/index.ts"]
+    }
+  },
+  "include": ["src", "__test__", "vitest.config.ts"]
+}

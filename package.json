@@ -1,0 +1,90 @@
+{
+  "name": "express-zod",
+  "version": "0.0.1",
+  "description": "Type-safe, schema-validated routing for Express and Zod.",
+  "keywords": [
+    "express",
+    "type-safe",
+    "validation",
+    "zod"
+  ],
+  "homepage": "https://github.com/express-zod/core#readme",
+  "bugs": {
+    "url": "https://github.com/express-zod/core/issues"
+  },
+  "license": "MIT",
+  "author": "Megumi Chai",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/express-zod/core.git"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.cjs",
+  "types": "./dist/index.d.cts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "scripts": {
+    "build": "tsdown",
+    "check:package": "publint && attw --pack .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "fmt": "oxfmt",
+    "fmt:check": "oxfmt --check",
+    "playground:start": "pnpm --filter playground start",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "type-fest": "^5.10.0"
+  },
+  "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
+    "@types/express": "^5.0.6",
+    "@types/node": "^26.6.3",
+    "@types/supertest": "^7.2.1",
+    "express": "^5.2.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
+    "oxfmt": "^0.71.0",
+    "oxlint": "^1.86.0",
+    "publint": "^0.3.24",
+    "supertest": "^7.3.1",
+    "tsdown": "^0.23.0",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.3",
+    "zod": "^4.6.5"
+  },
+  "peerDependencies": {
+    "express": "^5.0.0",
+    "zod": "^4.0.0"
+  },
+  "lint-staged": {
+    "*.{js,mjs,cjs,ts,mts,cts}": [
+      "oxlint --fix",
+      "oxfmt --write"
+    ],
+    "*.{json,jsonc,md,yml,yaml}": [
+      "oxfmt --write"
+    ]
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@10.34.4"
+}
