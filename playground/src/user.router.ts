@@ -1,8 +1,12 @@
 import { createRouter } from 'express-zod'
 import { z } from 'zod'
 
+import { authenticate, requestId } from './middleware.ts'
+
 export const userRouter = createRouter()
-  .get('/users', (_, res) => {
+  .inherit(requestId)
+  .use(authenticate)
+  .get('/users', (_req, res) => {
     res.json({ message: 'Hello /users' })
   })
   .get(
@@ -19,3 +23,6 @@ export const userRouter = createRouter()
       res.json({ message: `Hello /users ${req.params.id}` })
     },
   )
+  .get('/me', (req, res) => {
+    res.json({ requestId: req.requestId, user: req.user })
+  })

@@ -12,6 +12,14 @@ import type { Simplify } from 'type-fest'
 import type { ZodType, output } from 'zod'
 
 import type { HttpStatusCode, NoBodyStatus, RouteMethod } from './http.ts'
+import type {
+  ContextAt,
+  Middleware,
+  MiddlewareContext,
+  NormalizePrefix,
+  ScopedProvides,
+  ScopeEntries,
+} from './middleware.ts'
 
 export interface RouteSchemas {
   params?: ZodType
@@ -91,9 +99,15 @@ export type RouteRequest<Schemas, Path extends string> = Omit<
   'headers'
 > & { headers: HeadersOf<Schemas> }
 
-export type RouteHandler<Schemas, Path extends string> = (
-  req: RouteRequest<Schemas, Path>,
+export type RouteHandler<Schemas, Path extends string, Context extends object = {}> = (
+  req: RouteRequest<Schemas, Path> & Context,
   res: RouteResponse<Schemas>,
+  next: NextFunction,
+) => unknown
+
+type PathHandler<Path extends string, Context extends object> = (
+  req: Request<PathParams<Path>> & Context,
+  res: Response,
   next: NextFunction,
 ) => unknown
 
@@ -183,104 +197,129 @@ export interface RouteMethods {
     target: Target & RoutedTarget<Target>,
     ...handlers: UseHandler[]
   ): this & PrefixedRoutes<RoutesOf<Target>, ''>
+  use<Provides extends object>(
+    middleware: Middleware<Provides>,
+  ): this & MiddlewareContext<ScopeEntries<this> & ScopedProvides<'', Provides>>
+  use<Prefix extends string, Provides extends object>(
+    path: Prefix,
+    middleware: Middleware<Provides>,
+  ): this &
+    MiddlewareContext<ScopeEntries<this> & ScopedProvides<NormalizePrefix<Prefix>, Provides>>
+  /**
+   * Merges the middleware's request context into the app or router type
+   * without registering the middleware at runtime. Use it when an ancestor
+   * already registered the middleware, so it only runs once per request.
+   */
+  inherit<Provides extends object>(
+    middleware: Middleware<Provides>,
+  ): this & MiddlewareContext<ScopeEntries<this> & ScopedProvides<'', Provides>>
+  /**
+   * Merges the middleware's request context for routes under `path` inside
+   * this router, without registering the middleware at runtime.
+   */
+  inherit<Prefix extends string, Provides extends object>(
+    path: Prefix,
+    middleware: Middleware<Provides>,
+  ): this &
+    MiddlewareContext<ScopeEntries<this> & ScopedProvides<NormalizePrefix<Prefix>, Provides>>
   all<Path extends string, Schemas extends RouteSchemas>(
     path: Path,
     schemas: Schemas,
-    ...handlers: Handlers<RouteHandler<Schemas, Path>>
+    ...handlers: Handlers<RouteHandler<Schemas, Path, ContextAt<this, Path>>>
   ): this & RouteEntry<'all', Path, Schemas>
   all<Path extends string>(
     path: Path,
-    ...handlers: Handlers<RequestHandler<PathParams<Path>>>
+    ...handlers: Handlers<PathHandler<Path, ContextAt<this, Path>>>
   ): this & RouteEntry<'all', Path, {}>
   connect<Path extends string, Schemas extends RouteSchemas>(
     path: Path,
     schemas: Schemas,
-    ...handlers: Handlers<RouteHandler<Schemas, Path>>
+    ...handlers: Handlers<RouteHandler<Schemas, Path, ContextAt<this, Path>>>
   ): this & RouteEntry<'connect', Path, Schemas>
   connect<Path extends string>(
     path: Path,
-    ...handlers: Handlers<RequestHandler<PathParams<Path>>>
+    ...handlers: Handlers<PathHandler<Path, ContextAt<this, Path>>>
   ): this & RouteEntry<'connect', Path, {}>
   delete<Path extends string, Schemas extends RouteSchemas>(
     path: Path,
     schemas: Schemas,
-    ...handlers: Handlers<RouteHandler<Schemas, Path>>
+    ...handlers: Handlers<RouteHandler<Schemas, Path, ContextAt<this, Path>>>
   ): this & RouteEntry<'delete', Path, Schemas>
   delete<Path extends string>(
     path: Path,
-    ...handlers: Handlers<RequestHandler<PathParams<Path>>>
+    ...handlers: Handlers<PathHandler<Path, ContextAt<this, Path>>>
   ): this & RouteEntry<'delete', Path, {}>
   get<Path extends string, Schemas extends RouteSchemas>(
     path: Path,
     schemas: Schemas,
-    ...handlers: Handlers<RouteHandler<Schemas, Path>>
+    ...handlers: Handlers<RouteHandler<Schemas, Path, ContextAt<this, Path>>>
   ): this & RouteEntry<'get', Path, Schemas>
   get<Path extends string>(
     path: Path,
-    ...handlers: Handlers<RequestHandler<PathParams<Path>>>
+    ...handlers: Handlers<PathHandler<Path, ContextAt<this, Path>>>
   ): this & RouteEntry<'get', Path, {}>
   head<Path extends string, Schemas extends RouteSchemas>(
     path: Path,
     schemas: Schemas,
-    ...handlers: Handlers<RouteHandler<Schemas, Path>>
+    ...handlers: Handlers<RouteHandler<Schemas, Path, ContextAt<this, Path>>>
   ): this & RouteEntry<'head', Path, Schemas>
   head<Path extends string>(
     path: Path,
-    ...handlers: Handlers<RequestHandler<PathParams<Path>>>
+    ...handlers: Handlers<PathHandler<Path, ContextAt<this, Path>>>
   ): this & RouteEntry<'head', Path, {}>
   options<Path extends string, Schemas extends RouteSchemas>(
     path: Path,
     schemas: Schemas,
-    ...handlers: Handlers<RouteHandler<Schemas, Path>>
+    ...handlers: Handlers<RouteHandler<Schemas, Path, ContextAt<this, Path>>>
   ): this & RouteEntry<'options', Path, Schemas>
   options<Path extends string>(
     path: Path,
-    ...handlers: Handlers<RequestHandler<PathParams<Path>>>
+    ...handlers: Handlers<PathHandler<Path, ContextAt<this, Path>>>
   ): this & RouteEntry<'options', Path, {}>
   patch<Path extends string, Schemas extends RouteSchemas>(
     path: Path,
     schemas: Schemas,
-    ...handlers: Handlers<RouteHandler<Schemas, Path>>
+    ...handlers: Handlers<RouteHandler<Schemas, Path, ContextAt<this, Path>>>
   ): this & RouteEntry<'patch', Path, Schemas>
   patch<Path extends string>(
     path: Path,
-    ...handlers: Handlers<RequestHandler<PathParams<Path>>>
+    ...handlers: Handlers<PathHandler<Path, ContextAt<this, Path>>>
   ): this & RouteEntry<'patch', Path, {}>
   post<Path extends string, Schemas extends RouteSchemas>(
     path: Path,
     schemas: Schemas,
-    ...handlers: Handlers<RouteHandler<Schemas, Path>>
+    ...handlers: Handlers<RouteHandler<Schemas, Path, ContextAt<this, Path>>>
   ): this & RouteEntry<'post', Path, Schemas>
   post<Path extends string>(
     path: Path,
-    ...handlers: Handlers<RequestHandler<PathParams<Path>>>
+    ...handlers: Handlers<PathHandler<Path, ContextAt<this, Path>>>
   ): this & RouteEntry<'post', Path, {}>
   put<Path extends string, Schemas extends RouteSchemas>(
     path: Path,
     schemas: Schemas,
-    ...handlers: Handlers<RouteHandler<Schemas, Path>>
+    ...handlers: Handlers<RouteHandler<Schemas, Path, ContextAt<this, Path>>>
   ): this & RouteEntry<'put', Path, Schemas>
   put<Path extends string>(
     path: Path,
-    ...handlers: Handlers<RequestHandler<PathParams<Path>>>
+    ...handlers: Handlers<PathHandler<Path, ContextAt<this, Path>>>
   ): this & RouteEntry<'put', Path, {}>
   query<Path extends string, Schemas extends RouteSchemas>(
     path: Path,
     schemas: Schemas,
-    ...handlers: Handlers<RouteHandler<Schemas, Path>>
+    ...handlers: Handlers<RouteHandler<Schemas, Path, ContextAt<this, Path>>>
   ): this & RouteEntry<'query', Path, Schemas>
   query<Path extends string>(
     path: Path,
-    ...handlers: Handlers<RequestHandler<PathParams<Path>>>
+    ...handlers: Handlers<PathHandler<Path, ContextAt<this, Path>>>
   ): this & RouteEntry<'query', Path, {}>
   trace<Path extends string, Schemas extends RouteSchemas>(
     path: Path,
     schemas: Schemas,
-    ...handlers: Handlers<RouteHandler<Schemas, Path>>
+    ...handlers: Handlers<RouteHandler<Schemas, Path, ContextAt<this, Path>>>
   ): this & RouteEntry<'trace', Path, Schemas>
   trace<Path extends string>(
     path: Path,
-    ...handlers: Handlers<RequestHandler<PathParams<Path>>>
+    ...handlers: Handlers<PathHandler<Path, ContextAt<this, Path>>>
   ): this & RouteEntry<'trace', Path, {}>
 }
 

@@ -55,6 +55,9 @@ export function registerRouteMethods<Target extends object>(target: Target): Tar
     return result
   }
 
+  // Type-only: the middleware is not registered on the Express stack.
+  methods.inherit = () => target
+
   Object.defineProperty(target, 'registry', {
     configurable: true,
     get: () => collectRoutes(target),
