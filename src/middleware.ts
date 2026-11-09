@@ -16,20 +16,24 @@ type SchemaHandler<Schemas extends RouteSchemas, Provides extends object = {}> =
   next: NextFunction,
 ) => unknown
 
-const schemasByMiddleware = new WeakMap<object, RouteSchemas>()
-
-export function defineMiddleware<Provides extends object = {}>(
-  handler: Handler<Provides>,
-): Middleware<Provides> & {
+export interface HandlerBuilder<Provides extends object> {
   <Schemas extends RouteSchemas>(schemas: Schemas): Middleware<Provides, Schemas>
 }
-export function defineMiddleware<Schemas extends RouteSchemas>(
-  schemas: Schemas,
-): Middleware<{}, Schemas> & {
+
+export interface SchemasBuilder<Schemas extends RouteSchemas> {
   <Provides extends object = {}>(
     handler: SchemaHandler<Schemas, Provides>,
   ): Middleware<Provides, Schemas>
 }
+
+const schemasByMiddleware = new WeakMap<object, RouteSchemas>()
+
+export function defineMiddleware<Provides extends object = {}>(
+  handler: Handler<Provides>,
+): Middleware<Provides> & HandlerBuilder<Provides>
+export function defineMiddleware<Schemas extends RouteSchemas>(
+  schemas: Schemas,
+): Middleware<{}, Schemas> & SchemasBuilder<Schemas>
 export function defineMiddleware<Schemas extends RouteSchemas>(
   schemas: Schemas,
   handler: SchemaHandler<Schemas>,

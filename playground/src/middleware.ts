@@ -23,9 +23,7 @@ export const requireAdmin = defineMiddleware({
   next()
 })
 
-export const paginate = defineMiddleware((_req, _res, next) => {
-  next()
-})({
+export const paginate = defineMiddleware({
   query: z.object({
     page: z.coerce.number().int().min(1).default(1),
     pageSize: z.coerce.number().int().min(1).max(100).default(10),
