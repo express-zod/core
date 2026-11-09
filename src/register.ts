@@ -1,0 +1,73 @@
+import { addRoute, collectRoutes, ensureRegistry, mountRoutes } from './registry.ts'
+import type { RouteMethod } from './types/http.ts'
+import type { RouteSchemas } from './types/route.ts'
+import { validate } from './validate.ts'
+
+const ROUTE_METHODS = [
+  'all',
+  'connect',
+  'delete',
+  'get',
+  'head',
+  'options',
+  'patch',
+  'post',
+  'put',
+  'query',
+  'trace',
+] as const satisfies RouteMethod[]
+const SCHEMA_KEYS = ['params', 'query', 'body', 'headers', 'response'] as const
+
+export function registerRouteMethods<Target extends object>(target: Target): Target {
+  ensureRegistry(target)
+
+  const methods = target as unknown as Record<string, (...args: any[]) => any>
+
+  for (const method of ROUTE_METHODS) {
+    const original = methods[method]!.bind(target)
+
+    methods[method] = (path: unknown, ...handlers: unknown[]) => {
+      if (handlers.length === 0) return original(path)
+
+      const [first, ...rest] = handlers
+      if (isRouteSchemas(first)) {
+        const result = original(path, validate(first), ...rest)
+        addRoute(target, { method, path: String(path), schemas: first })
+        return result
+      }
+
+      const result = original(path, ...handlers)
+      addRoute(target, { method, path: String(path) })
+      return result
+    }
+  }
+
+  const use = methods.use!.bind(target)
+
+  methods.use = (pathOrTarget: unknown, ...handlers: unknown[]) => {
+    const result = use(pathOrTarget, ...handlers)
+
+    const prefix = typeof pathOrTarget === 'string' ? pathOrTarget : ''
+    const mounted = typeof pathOrTarget === 'string' ? handlers : [pathOrTarget, ...handlers]
+
+    for (const candidate of mounted.flat(Infinity)) mountRoutes(target, candidate, prefix)
+
+    return result
+  }
+
+  Object.defineProperty(target, 'registry', {
+    configurable: true,
+    get: () => collectRoutes(target),
+  })
+
+  return target
+}
+
+function isRouteSchemas(value: unknown): value is RouteSchemas {
+  if (typeof value !== 'object' || value === null) return false
+
+  const keys = Object.keys(value)
+  if (keys.length === 0) return false
+
+  return keys.every((key) => SCHEMA_KEYS.includes(key as (typeof SCHEMA_KEYS)[number]))
+}

@@ -51,6 +51,7 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "path-to-regexp-types": "^0.0.1",
     "type-fest": "^5.10.0"
   },
   "devDependencies": {
