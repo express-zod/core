@@ -1,7 +1,8 @@
+import type { NextFunction, Request, Response } from 'express'
 import request from 'supertest'
 import { z } from 'zod'
 
-import { createApp } from '../src/index.ts'
+import { createApp, ValidationError } from '../src/index.ts'
 
 const partialParams = z.object({ id: z.coerce.number() })
 
@@ -59,6 +60,14 @@ describe('strict params trimming', () => {
         res.json(req.params)
       },
     )
+    app.onError((error: unknown, _req: Request, res: Response, next: NextFunction) => {
+      if (error instanceof ValidationError) {
+        res.status(400).json({ errors: error.issues })
+        return
+      }
+
+      next(error)
+    })
 
     const res = await request(app).get('/users/2')
 
@@ -66,6 +75,18 @@ describe('strict params trimming', () => {
     expect(res.body.errors).toEqual([
       expect.objectContaining({ code: 'invalid_type', path: ['ticket'] }),
     ])
+  })
+
+  it('leaves non-object params schemas untouched', async () => {
+    const app = createApp()
+    app.get('/users/:id', { params: z.any() }, (req, res) => {
+      res.json(req.params)
+    })
+
+    const res = await request(app).get('/users/2')
+
+    expect(res.status).toBe(200)
+    expect(res.body).toEqual({ id: '2' })
   })
 
   it('leaves strip params schemas untouched', async () => {

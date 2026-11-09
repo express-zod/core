@@ -2,6 +2,7 @@ import request from 'supertest'
 import { z } from 'zod'
 
 import { createApp, createRouter } from '../src/index.ts'
+import { collectRoutes, mountRoutes } from '../src/registry.ts'
 
 describe('runtime route registry', () => {
   it('records routes with their schemas', () => {
@@ -74,6 +75,51 @@ describe('runtime route registry', () => {
     })
 
     expect(app.registry).toMatchObject([{ method: 'get', path: '/api/v1/:postId' }])
+  })
+
+  it('ignores mount cycles', () => {
+    const first = createRouter()
+    const second = createRouter()
+
+    first.use(second)
+    second.use(first)
+    first.get('/ping', (_req, res) => {
+      res.send('ok')
+    })
+
+    expect(first.registry.map(({ path }) => path)).toEqual(['/ping'])
+  })
+
+  it('joins prefixes with paths that omit the leading slash', () => {
+    const router = createRouter().get('users', (_req, res) => {
+      res.send('ok')
+    })
+    const app = createApp().use('/api', router)
+
+    expect(app.registry.map(({ path }) => path)).toEqual(['/api/users'])
+  })
+
+  it('rejects an empty object in place of schemas', () => {
+    const app = createApp()
+
+    expect(() =>
+      app.get('/empty', {}, (_req, res) => {
+        res.send('ok')
+      }),
+    ).toThrow('argument handler must be a function')
+  })
+
+  it('ignores mount targets that are not objects', () => {
+    const target: Record<string, never> = {}
+
+    mountRoutes(target, 'not-a-target', '/api')
+    mountRoutes(target, null, '/api')
+
+    expect(collectRoutes(target)).toEqual([])
+  })
+
+  it('collects an empty list for targets without entries', () => {
+    expect(collectRoutes({})).toEqual([])
   })
 
   it('keeps mounted routes working', async () => {
