@@ -1,7 +1,7 @@
 <!--
 Confirm the checks pass before opening this:
 
-    pnpm fmt:check && pnpm lint && pnpm typecheck && pnpm test
+    pnpm format:check && pnpm lint && pnpm typecheck && pnpm test
 
 See CONTRIBUTING.md for the layout and conventions.
 -->
@@ -16,5 +16,5 @@ See CONTRIBUTING.md for the layout and conventions.
 
 ## Checklist
 
-- [ ] `pnpm fmt:check && pnpm lint && pnpm typecheck && pnpm test` passes
+- [ ] `pnpm format:check && pnpm lint && pnpm typecheck && pnpm test` passes
 - [ ] Public API changes are reflected in the README or CONTRIBUTING where relevant

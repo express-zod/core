@@ -45,9 +45,10 @@
     "test:watch": "vitest",
     "lint": "oxlint",
     "lint:fix": "oxlint --fix",
-    "fmt": "oxfmt",
-    "fmt:check": "oxfmt --check",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
     "playground:start": "pnpm --filter playground start",
+    "playground:dev": "pnpm --filter playground dev",
     "prepare": "husky"
   },
   "dependencies": {
