@@ -1,4 +1,5 @@
-import { addRoute, collectRoutes, ensureRegistry, mountRoutes } from './registry.ts'
+import { getMiddlewareSchemas } from './middleware.ts'
+import { addMiddleware, addRoute, collectRoutes, ensureRegistry, mountRoutes } from './registry.ts'
 import type { RouteMethod } from './types/http.ts'
 import type { RouteSchemas } from './types/route.ts'
 import { validate } from './validate.ts'
@@ -16,7 +17,11 @@ const ROUTE_METHODS = [
   'query',
   'trace',
 ] as const satisfies RouteMethod[]
-const SCHEMA_KEYS = ['params', 'query', 'body', 'headers', 'response'] as const
+const schemaKeys = new Set(['params', 'query', 'body', 'headers', 'response'])
+
+export function registerSchemaKey(key: string): void {
+  schemaKeys.add(key)
+}
 
 export function registerRouteMethods<Target extends object>(target: Target): Target {
   ensureRegistry(target)
@@ -50,7 +55,12 @@ export function registerRouteMethods<Target extends object>(target: Target): Tar
     const prefix = typeof pathOrTarget === 'string' ? pathOrTarget : ''
     const mounted = typeof pathOrTarget === 'string' ? handlers : [pathOrTarget, ...handlers]
 
-    for (const candidate of mounted.flat(Infinity)) mountRoutes(target, candidate, prefix)
+    for (const candidate of mounted.flat(Infinity)) {
+      mountRoutes(target, candidate, prefix)
+
+      const schemas = getMiddlewareSchemas(candidate)
+      if (schemas) addMiddleware(target, schemas, prefix)
+    }
 
     return result
   }
@@ -86,5 +96,5 @@ function isRouteSchemas(value: unknown): value is RouteSchemas {
   const keys = Object.keys(value)
   if (keys.length === 0) return false
 
-  return keys.every((key) => SCHEMA_KEYS.includes(key as (typeof SCHEMA_KEYS)[number]))
+  return keys.every((key) => schemaKeys.has(key))
 }

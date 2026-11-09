@@ -1,8 +1,16 @@
 import express from 'express'
-import { createApp, type RoutesOf } from 'express-zod'
+import { createApp, registerSchemaKey, type RoutesOf } from 'express-zod'
 
 import { requestId, requireAdmin } from './middleware.ts'
 import { userRouter } from './user.router.ts'
+
+declare module 'express-zod' {
+  interface RouteSchemas {
+    doc?: { summary: string }
+  }
+}
+
+registerSchemaKey('doc')
 
 const app = createApp()
   .use(express.json())
@@ -13,6 +21,9 @@ const app = createApp()
   .use('/admin', requireAdmin)
   .get('/admin/dashboard', (req, res) => {
     res.json({ message: 'Hello /admin', requestId: req.requestId, isAdmin: req.isAdmin })
+  })
+  .get('/health', { doc: { summary: 'Health check' } }, (_req, res) => {
+    res.send('ok')
   })
   .use('/api', userRouter)
 

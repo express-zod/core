@@ -17,7 +17,8 @@ import type {
   Middleware,
   MiddlewareContext,
   NormalizePrefix,
-  ScopedProvides,
+  ResolvedContext,
+  ScopedMiddleware,
   ScopeEntries,
 } from './middleware.ts'
 
@@ -33,6 +34,7 @@ export interface RouteRecord {
   method: RouteMethod
   path: string
   schemas?: RouteSchemas
+  middleware?: readonly RouteSchemas[]
 }
 
 type ParamsOf<Schemas, Path extends string> = Schemas extends {
@@ -54,7 +56,7 @@ type QueryOf<Schemas> = Schemas extends { query: infer Schema extends ZodType }
 type BodyOf<Schemas> = Schemas extends { body: infer Schema extends ZodType } ? output<Schema> : any
 
 type HeadersOf<Schemas> = Schemas extends { headers: infer Schema extends ZodType }
-  ? output<Schema>
+  ? Request['headers'] & output<Schema>
   : Request['headers']
 
 type ResponseMap<Schemas> = Schemas extends { response: infer ResponseSchema }
@@ -99,14 +101,36 @@ export type RouteRequest<Schemas, Path extends string> = Omit<
   'headers'
 > & { headers: HeadersOf<Schemas> }
 
-export type RouteHandler<Schemas, Path extends string, Context extends object = {}> = (
-  req: RouteRequest<Schemas, Path> & Context,
+type DeclaredLocations<Schemas> =
+  | (Schemas extends { params: ZodType } ? 'params' : never)
+  | (Schemas extends { query: ZodType } ? 'query' : never)
+  | (Schemas extends { body: ZodType } ? 'body' : never)
+  | (Schemas extends { headers: ZodType } ? 'headers' : never)
+
+type RequestOverlay<Resolved extends ResolvedContext, Schemas> = Omit<
+  Resolved['request'],
+  DeclaredLocations<Schemas> | 'params'
+>
+
+type WithContext<Base extends object, Resolved extends ResolvedContext, Schemas> = Omit<
+  Base,
+  keyof RequestOverlay<Resolved, Schemas>
+> &
+  RequestOverlay<Resolved, Schemas> &
+  Resolved['context']
+
+export type RouteHandler<
+  Schemas,
+  Path extends string,
+  Resolved extends ResolvedContext = { context: {}; request: {} },
+> = (
+  req: WithContext<RouteRequest<Schemas, Path>, Resolved, Schemas>,
   res: RouteResponse<Schemas>,
   next: NextFunction,
 ) => unknown
 
-type PathHandler<Path extends string, Context extends object> = (
-  req: Request<PathParams<Path>> & Context,
+type PathHandler<Path extends string, Resolved extends ResolvedContext> = (
+  req: WithContext<Request<PathParams<Path>>, Resolved, {}>,
   res: Response,
   next: NextFunction,
 ) => unknown
@@ -197,31 +221,35 @@ export interface RouteMethods {
     target: Target & RoutedTarget<Target>,
     ...handlers: UseHandler[]
   ): this & PrefixedRoutes<RoutesOf<Target>, ''>
-  use<Provides extends object>(
-    middleware: Middleware<Provides>,
-  ): this & MiddlewareContext<ScopeEntries<this> & ScopedProvides<'', Provides>>
-  use<Prefix extends string, Provides extends object>(
+  use<Provides extends object, Schemas extends RouteSchemas>(
+    middleware: Middleware<Provides, Schemas>,
+  ): this & MiddlewareContext<ScopeEntries<this> & ScopedMiddleware<'', Provides, Schemas>>
+  use<Prefix extends string, Provides extends object, Schemas extends RouteSchemas>(
     path: Prefix,
-    middleware: Middleware<Provides>,
+    middleware: Middleware<Provides, Schemas>,
   ): this &
-    MiddlewareContext<ScopeEntries<this> & ScopedProvides<NormalizePrefix<Prefix>, Provides>>
+    MiddlewareContext<
+      ScopeEntries<this> & ScopedMiddleware<NormalizePrefix<Prefix>, Provides, Schemas>
+    >
   /**
    * Merges the middleware's request context into the app or router type
    * without registering the middleware at runtime. Use it when an ancestor
    * already registered the middleware, so it only runs once per request.
    */
-  inherit<Provides extends object>(
-    middleware: Middleware<Provides>,
-  ): this & MiddlewareContext<ScopeEntries<this> & ScopedProvides<'', Provides>>
+  inherit<Provides extends object, Schemas extends RouteSchemas>(
+    middleware: Middleware<Provides, Schemas>,
+  ): this & MiddlewareContext<ScopeEntries<this> & ScopedMiddleware<'', Provides, Schemas>>
   /**
    * Merges the middleware's request context for routes under `path` inside
    * this router, without registering the middleware at runtime.
    */
-  inherit<Prefix extends string, Provides extends object>(
+  inherit<Prefix extends string, Provides extends object, Schemas extends RouteSchemas>(
     path: Prefix,
-    middleware: Middleware<Provides>,
+    middleware: Middleware<Provides, Schemas>,
   ): this &
-    MiddlewareContext<ScopeEntries<this> & ScopedProvides<NormalizePrefix<Prefix>, Provides>>
+    MiddlewareContext<
+      ScopeEntries<this> & ScopedMiddleware<NormalizePrefix<Prefix>, Provides, Schemas>
+    >
   /**
    * Registers an Express error handler without adding route context to the
    * app or router type.

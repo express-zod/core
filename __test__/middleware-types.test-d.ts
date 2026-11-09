@@ -1,6 +1,12 @@
 import { z } from 'zod'
 
-import { createApp, createRouter, defineMiddleware, type RoutesOf } from '../src/index.ts'
+import {
+  createApp,
+  createRouter,
+  defineMiddleware,
+  type Middleware,
+  type RoutesOf,
+} from '../src/index.ts'
 
 describe('middleware context', () => {
   it('infers context from global middleware', () => {
@@ -196,6 +202,174 @@ describe('middleware context', () => {
       // @ts-expect-error inherited context stays inside the router
       void req.requestId
       res.send('ok')
+    })
+  })
+
+  it('infers schemas while the caller supplies context', () => {
+    defineMiddleware({ headers: z.object({ authorization: z.string() }) })<{
+      user: { id: number }
+    }>((req, _res, next) => {
+      expectTypeOf(req.user.id).toEqualTypeOf<number>()
+      expectTypeOf(req.headers.authorization).toEqualTypeOf<string>()
+      next()
+    })
+  })
+
+  it('infers middleware types without generics', () => {
+    const auth = defineMiddleware({ headers: z.object({ authorization: z.string() }) })((
+      req,
+      _res,
+      next,
+    ) => {
+      expectTypeOf(req.headers.authorization).toEqualTypeOf<string>()
+      // @ts-expect-error no context is declared
+      void req.user
+      next()
+    })
+
+    expectTypeOf(auth).toMatchTypeOf<Middleware<{}>>()
+
+    const plain = defineMiddleware((req, _res, next) => {
+      // @ts-expect-error no context is declared
+      void req.user
+      next()
+    })
+
+    expectTypeOf(plain).toMatchTypeOf<Middleware<{}>>()
+
+    const curried = defineMiddleware({ query: z.object({ page: z.coerce.number() }) })((
+      req,
+      _res,
+      next,
+    ) => {
+      expectTypeOf(req.query.page).toEqualTypeOf<number>()
+      // @ts-expect-error no context is declared
+      void req.user
+      next()
+    })
+
+    expectTypeOf(curried).toMatchTypeOf<Middleware<{}>>()
+  })
+
+  it('exposes middleware schema output to route handlers', () => {
+    const parsed = defineMiddleware({
+      query: z.object({ page: z.coerce.number() }),
+      headers: z.object({ authorization: z.string() }),
+      body: z.object({ name: z.string() }),
+    })((_req, _res, next) => next())
+
+    createApp()
+      .use(parsed)
+      .get('/users', (req, _res) => {
+        expectTypeOf(req.query.page).toEqualTypeOf<number>()
+        expectTypeOf(req.headers.authorization).toEqualTypeOf<string>()
+        expectTypeOf(req.headers.host).toEqualTypeOf<string | undefined>()
+        expectTypeOf(req.body.name).toEqualTypeOf<string>()
+      })
+  })
+
+  it('keeps the base request headers when a route declares headers', () => {
+    createApp().get(
+      '/headers',
+      { headers: z.object({ authorization: z.string() }) },
+      (req, _res) => {
+        expectTypeOf(req.headers.authorization).toEqualTypeOf<string>()
+        expectTypeOf(req.headers.host).toEqualTypeOf<string | undefined>()
+      },
+    )
+  })
+
+  it('lets route schemas override middleware schemas', () => {
+    const parsed = defineMiddleware({
+      query: z.object({ page: z.coerce.number() }),
+      headers: z.object({ authorization: z.string() }),
+    })((_req, _res, next) => next())
+
+    createApp()
+      .use(parsed)
+      .get('/users', { query: z.object({ page: z.string() }) }, (req, _res) => {
+        expectTypeOf(req.query.page).toEqualTypeOf<string>()
+        expectTypeOf(req.headers.authorization).toEqualTypeOf<string>()
+      })
+  })
+
+  it('scopes middleware schema output by prefix', () => {
+    const parsed = defineMiddleware({ query: z.object({ page: z.coerce.number() }) })(
+      (_req, _res, next) => next(),
+    )
+
+    createApp()
+      .use('/admin', parsed)
+      .get('/admin/users', (req, _res) => {
+        expectTypeOf(req.query.page).toEqualTypeOf<number>()
+      })
+      .get('/public', (req, _res) => {
+        expectTypeOf(req.query.page).not.toEqualTypeOf<number>()
+      })
+  })
+
+  it('merges schemas from multiple middleware', () => {
+    const withPage = defineMiddleware({ query: z.object({ page: z.coerce.number() }) })(
+      (_req, _res, next) => next(),
+    )
+    const withLimit = defineMiddleware({ query: z.object({ limit: z.coerce.number() }) })(
+      (_req, _res, next) => next(),
+    )
+
+    createApp()
+      .use(withPage)
+      .use(withLimit)
+      .get('/', (req, _res) => {
+        expectTypeOf(req.query.page).toEqualTypeOf<number>()
+        expectTypeOf(req.query.limit).toEqualTypeOf<number>()
+      })
+  })
+
+  it('accepts schemas and handlers in either order', () => {
+    defineMiddleware({ headers: z.object({ authorization: z.string() }) }, (req, _res, next) => {
+      expectTypeOf(req.headers.authorization).toEqualTypeOf<string>()
+      next()
+    })
+
+    defineMiddleware(
+      (req, _res, next) => {
+        expectTypeOf(req.headers.authorization).toEqualTypeOf<string>()
+        next()
+      },
+      { headers: z.object({ authorization: z.string() }) },
+    )
+  })
+
+  it('accepts schemas without a handler', () => {
+    createApp()
+      .use(defineMiddleware({ query: z.object({ page: z.coerce.number() }) }))
+      .get('/users', (req, _res) => {
+        expectTypeOf(req.query.page).toEqualTypeOf<number>()
+      })
+  })
+
+  it('collects context before schemas', () => {
+    const auth = defineMiddleware<{ user: { id: number } }>((req, _res, next) => {
+      req.user = { id: 1 }
+      next()
+    })({ headers: z.object({ authorization: z.string() }) })
+
+    createApp()
+      .use(auth)
+      .get('/', (req, _res) => {
+        expectTypeOf(req.user.id).toEqualTypeOf<number>()
+        expectTypeOf(req.headers.authorization).toEqualTypeOf<string>()
+      })
+  })
+
+  it('types the request from declarative middleware schemas', () => {
+    defineMiddleware({
+      headers: z.object({ authorization: z.string() }),
+      query: z.object({ page: z.coerce.number() }),
+    })((req, _res, next) => {
+      expectTypeOf(req.headers.authorization).toEqualTypeOf<string>()
+      expectTypeOf(req.query.page).toEqualTypeOf<number>()
+      next()
     })
   })
 })

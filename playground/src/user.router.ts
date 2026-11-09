@@ -1,13 +1,14 @@
 import { createRouter } from 'express-zod'
 import { z } from 'zod'
 
-import { authenticate, requestId } from './middleware.ts'
+import { authenticate, paginate, requestId } from './middleware.ts'
 
 export const userRouter = createRouter()
   .inherit(requestId)
   .use(authenticate)
-  .get('/users', (_req, res) => {
-    res.json({ message: 'Hello /users' })
+  .use(paginate)
+  .get('/users', (req, res) => {
+    res.json({ message: 'Hello /users', page: req.query.page })
   })
   .get(
     '/users/:id',

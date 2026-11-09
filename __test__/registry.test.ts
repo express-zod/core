@@ -1,7 +1,8 @@
 import request from 'supertest'
 import { z } from 'zod'
 
-import { createApp, createRouter } from '../src/index.ts'
+import { createApp, createRouter, registerSchemaKey } from '../src/index.ts'
+import type { RouteSchemas } from '../src/index.ts'
 import { collectRoutes, mountRoutes } from '../src/registry.ts'
 
 describe('runtime route registry', () => {
@@ -97,6 +98,35 @@ describe('runtime route registry', () => {
     const app = createApp().use('/api', router)
 
     expect(app.registry.map(({ path }) => path)).toEqual(['/api/users'])
+  })
+
+  it('accepts explicitly registered schema keys', async () => {
+    registerSchemaKey('operation')
+    const operation = { summary: 'demo' }
+
+    const app = createApp().get(
+      '/custom',
+      { operation } as unknown as RouteSchemas,
+      (_req, res) => {
+        res.send('ok')
+      },
+    )
+
+    expect(app.registry).toMatchObject([{ method: 'get', path: '/custom', schemas: { operation } }])
+
+    const res = await request(app).get('/custom')
+
+    expect(res.status).toBe(200)
+  })
+
+  it('rejects schema keys that are not registered', () => {
+    const app = createApp()
+
+    expect(() =>
+      app.get('/custom', { unknown: true } as unknown as RouteSchemas, (_req, res) => {
+        res.send('ok')
+      }),
+    ).toThrow('argument handler must be a function')
   })
 
   it('rejects an empty object in place of schemas', () => {
