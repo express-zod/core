@@ -1,6 +1,7 @@
 import type { Request, RequestHandler } from 'express'
 import type { ZodType } from 'zod'
 
+import { ValidationError } from './error.ts'
 import type { RouteSchemas } from './types/route.ts'
 
 const LOCATIONS = ['params', 'query', 'body', 'headers'] as const
@@ -28,7 +29,7 @@ export function validate(schemas: RouteSchemas): RequestHandler {
 
     for (const { location, result } of results) {
       if (!result.success) {
-        res.status(400).json({ errors: result.error.issues })
+        next(new ValidationError(location, result.error))
         return
       }
 

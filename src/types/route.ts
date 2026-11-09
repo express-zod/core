@@ -222,6 +222,12 @@ export interface RouteMethods {
     middleware: Middleware<Provides>,
   ): this &
     MiddlewareContext<ScopeEntries<this> & ScopedProvides<NormalizePrefix<Prefix>, Provides>>
+  /**
+   * Registers an Express error handler without adding route context to the
+   * app or router type.
+   */
+  onError(...handlers: ErrorRequestHandler[]): this
+  onError(path: string, ...handlers: ErrorRequestHandler[]): this
   all<Path extends string, Schemas extends RouteSchemas>(
     path: Path,
     schemas: Schemas,

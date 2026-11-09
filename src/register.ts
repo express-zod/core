@@ -55,6 +55,13 @@ export function registerRouteMethods<Target extends object>(target: Target): Tar
     return result
   }
 
+  methods.onError = (...args: unknown[]) => {
+    const path = typeof args[0] === 'string' ? (args.shift() as string) : undefined
+    const handlers = args.flat(Infinity).map(normalizeErrorHandler)
+
+    return path === undefined ? use(...handlers) : use(path, ...handlers)
+  }
+
   // Type-only: the middleware is not registered on the Express stack.
   methods.inherit = () => target
 
@@ -64,6 +71,13 @@ export function registerRouteMethods<Target extends object>(target: Target): Tar
   })
 
   return target
+}
+
+function normalizeErrorHandler(handler: unknown): unknown {
+  if (typeof handler !== 'function' || handler.length === 4) return handler
+
+  return (error: unknown, req: unknown, res: unknown, next: unknown) =>
+    (handler as (...args: unknown[]) => unknown)(error, req, res, next)
 }
 
 function isRouteSchemas(value: unknown): value is RouteSchemas {
