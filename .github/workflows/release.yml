@@ -47,8 +47,9 @@ jobs:
       - run: pnpm build
       - run: pnpm check:package
 
-      # Pre-1.0 releases go to the alpha tag, matching SECURITY.md.
-      - run: pnpm publish --tag alpha --provenance --no-git-checks
+      # Pre-1.0 releases go to the alpha tag, matching SECURITY.md. Access has
+      # to be explicit: provenance is refused for a new package without it.
+      - run: pnpm publish --tag alpha --access public --provenance --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
