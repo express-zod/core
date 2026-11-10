@@ -9,6 +9,8 @@ permissions:
   contents: write
   # Provenance is signed with the workflow's OIDC token, so publishing needs it.
   id-token: write
+  # Publishing the mirror to npm.pkg.github.com needs it.
+  packages: write
 
 jobs:
   publish:
@@ -49,6 +51,18 @@ jobs:
       - run: pnpm publish --tag alpha --provenance --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # GitHub Packages only accepts scoped names, so the mirror is published
+      # as @express-zod/core while npmjs keeps the unscoped name. This also
+      # puts the package in the repository's sidebar.
+      - name: Publish to GitHub Packages
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          npm pkg set name="@express-zod/core"
+          printf '@express-zod:registry=https://npm.pkg.github.com\n//npm.pkg.github.com/:_authToken=%s\n' \
+            "$NODE_AUTH_TOKEN" >> .npmrc
+          pnpm publish --tag alpha --access public --no-git-checks
 
       # Only after a successful publish, so a failed release leaves no page
       # pointing at a version that npm never received.
