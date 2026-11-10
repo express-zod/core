@@ -1,6 +1,7 @@
 {
   "extends": "../tsconfig.json",
   "compilerOptions": {
+    "declaration": false,
     "paths": {
       "express-zod": ["../src/index.ts"]
     }

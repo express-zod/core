@@ -40,7 +40,7 @@
   "scripts": {
     "build": "tsdown",
     "check:package": "publint && attw --pack .",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && pnpm --filter playground typecheck",
     "test": "vitest run",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
