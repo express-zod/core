@@ -2,8 +2,8 @@
 
 ## Supported versions
 
-`express-zod` is pre-1.0 and published under the `alpha` dist-tag. Only the most
-recently published version is supported; older prereleases receive no fixes.
+`express-zod` is pre-1.0. Only the most recently published version is supported;
+older versions receive no fixes.
 
 ## Reporting a vulnerability
 

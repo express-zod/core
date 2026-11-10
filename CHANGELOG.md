@@ -11,7 +11,7 @@ Nothing yet.
 
 ## [0.0.1] - 2026-11-10
 
-First release, published under the `alpha` dist-tag.
+First release.
 
 ### Added
 
