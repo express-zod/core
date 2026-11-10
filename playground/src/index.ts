@@ -1,5 +1,5 @@
 import express from 'express'
-import { createApp, registerSchemaKey, type RoutesOf } from 'express-zod'
+import { createApp, type RoutesOf } from 'express-zod'
 
 import { requestId, requireAdmin } from './middleware.ts'
 import { userRouter } from './user.router.ts'
@@ -9,8 +9,6 @@ declare module 'express-zod' {
     doc?: { summary: string }
   }
 }
-
-registerSchemaKey('doc')
 
 const app = createApp()
   .use(express.json())

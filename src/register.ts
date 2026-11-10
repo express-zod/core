@@ -17,11 +17,6 @@ const ROUTE_METHODS = [
   'query',
   'trace',
 ] as const satisfies RouteMethod[]
-const schemaKeys = new Set(['params', 'query', 'body', 'headers', 'response'])
-
-export function registerSchemaKey(key: string): void {
-  schemaKeys.add(key)
-}
 
 export function registerRouteMethods<Target extends object>(target: Target): Target {
   ensureRegistry(target)
@@ -92,9 +87,7 @@ function normalizeErrorHandler(handler: unknown): unknown {
 
 function isRouteSchemas(value: unknown): value is RouteSchemas {
   if (typeof value !== 'object' || value === null) return false
+  if (Array.isArray(value)) return false
 
-  const keys = Object.keys(value)
-  if (keys.length === 0) return false
-
-  return keys.every((key) => schemaKeys.has(key))
+  return Object.keys(value).length > 0
 }
