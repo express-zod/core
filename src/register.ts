@@ -86,8 +86,5 @@ function normalizeErrorHandler(handler: unknown): unknown {
 }
 
 function isRouteSchemas(value: unknown): value is RouteSchemas {
-  if (typeof value !== 'object' || value === null) return false
-  if (Array.isArray(value)) return false
-
-  return Object.keys(value).length > 0
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
 }

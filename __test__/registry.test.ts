@@ -126,14 +126,28 @@ describe('runtime route registry', () => {
     expect(app.registry).toMatchObject([{ method: 'get', path: '/array' }])
   })
 
-  it('rejects an empty object in place of schemas', () => {
-    const app = createApp()
+  it('treats an empty array as handlers', async () => {
+    const app = createApp().get('/empty-array', [], (_req, res) => {
+      res.send('ok')
+    })
 
-    expect(() =>
-      app.get('/empty', {}, (_req, res) => {
-        res.send('ok')
-      }),
-    ).toThrow('argument handler must be a function')
+    expect(app.registry).toStrictEqual([{ method: 'get', path: '/empty-array' }])
+
+    const res = await request(app).get('/empty-array')
+
+    expect(res.status).toBe(200)
+  })
+
+  it('accepts an empty object in place of schemas', async () => {
+    const app = createApp().get('/empty', {}, (_req, res) => {
+      res.send('ok')
+    })
+
+    expect(app.registry).toStrictEqual([{ method: 'get', path: '/empty', schemas: {} }])
+
+    const res = await request(app).get('/empty')
+
+    expect(res.status).toBe(200)
   })
 
   it('ignores mount targets that are not objects', () => {

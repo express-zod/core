@@ -13,7 +13,7 @@ type SchemaInternals = {
 }
 
 export function validate(schemas: RouteSchemas): RequestHandler {
-  return async (req, res, next) => {
+  return async (req, _res, next) => {
     const entries = LOCATIONS.flatMap((location) => {
       const schema = schemas[location]
       if (!schema) return []
